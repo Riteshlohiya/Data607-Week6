@@ -1,0 +1,93 @@
+---
+title: "Data607 HW6 Part1"
+author: "Ritesh Lohiya"
+date: "March 10, 2018"
+output: html_document
+---
+
+
+```{r}
+library(knitr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+drug_usage <- read.csv("C:/Users/Arnav/Desktop/CUNY/Data607/drug_usage.csv", sep=",")
+head(drug_usage)
+```
+
+Rename pain releiver to pain.releiver
+
+```{r}
+drug_usage <- drug_usage %>%
+  rename("pain releiver.use" = pain.releiver.use,
+         "pain releiver.frequency" = pain.releiver.frequency)
+drug_usage
+```
+
+We can see that the data is in wide format. Need to bring the data to long format using gather():
+
+
+```{r}
+drug_usage1 <- drug_usage %>%
+  gather(key = "Group",value, -age, -n)%>% 
+  arrange(age)
+drug_usage1
+```
+
+Now seperate each drugfor Use and frequency using seperate():
+
+```{r}
+drug_usage2 <- drug_usage1 %>% 
+  separate(Group, into = c("Substance", "class"), sep = "\\." )
+head(drug_usage2,10)
+```
+
+Spreading the table using spread();
+
+```{r}
+drug_usage3 <- drug_usage2 %>% 
+  spread(class, value)
+drug_usage3
+```
+
+Using mutate make the values as numeric:
+
+```{r}
+drug_usage3 <- suppressWarnings(drug_usage3 %>% 
+  mutate(use = as.numeric(use),
+         frequency = as.numeric(frequency)))
+head(drug_usage3)
+```
+
+To just use Alcohol for analysis:
+
+```{r}
+alcohol <- drug_usage3 %>% 
+  filter(Substance=="alcohol") %>% 
+  select(-Substance)
+alcohol
+```
+
+Ploting age and alcohol usage:
+
+Age With Use:
+
+```{r}
+ggplot(alcohol) + geom_point(aes(age, y = use), color = "red") + labs(x = "Age", y = "Usage")
+```
+
+Age With frequency:
+
+```{r}
+ggplot(alcohol) + geom_point(aes(age, y = frequency), color = "blue") + labs(x = "Age", y = "Frequency")
+``` 
+
+
+
+
+
