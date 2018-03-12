@@ -1,0 +1,116 @@
+---
+title: "Data607 HW6 Part2"
+author: "Ritesh Lohiya"
+date: "March 10, 2018"
+output: html_document
+---
+IS 607 - Project 2:
+
+The goal of this assignment is to give you practice in preparing different datasets for downstream analysis work.
+Your task is to:
+(1) Choose any three of the "wide" datasets identified in the Week 6 Discussion items. (You may use your own dataset; please don't use my Sample Post dataset, since that was used in your Week 6 assignment!) For each of the three chosen datasets:
+??? Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset. You're encouraged to use a "wide" structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below.
+??? Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data. [Most of your grade will be based on this step!]
+??? Perform the analysis requested in the discussion item.
+??? Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative descriptions of your data cleanup work, analysis, and conclusions.
+(2) Please include in your homework submission, for each of the three chosen datasets:
+??? The URL to the .Rmd file in your GitHub repository, and
+??? The URL for your rpubs.com web page.
+
+I have taken the data set about marriage rates from FiveThirtyEight's GitHub and prepared my .csv file for my Part II Project.
+ 
+```{r}
+library(knitr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+marriage <- read.csv("https://raw.githubusercontent.com/Riteshlohiya/Data607-Week6/master/Marriage_rates.csv", header=TRUE, sep=",")
+marriage
+```
+
+We can consider only one range for thios 25 to 34:
+
+```{r}
+marriage1 <- marriage[c(2,4:21)]
+marriage1
+```
+
+Changing the column names:
+
+```{r}
+colnames(marriage1)<- c("Year", "All", "High_School", "Some_College", "Bachelor_Degree", "Bachelor_other", "Graduate_Degree", "White", "Black", "Hispanic", "New_England", "Mid_Atlantic", "Midwest", "South", "Mountain", "Pacific", "Poor", "Middle_class", "Rich")
+colnames(marriage1)
+head(marriage1)
+```
+
+Now use gather() to club by class:
+
+```{r}
+marriage1 <- gather(marriage1, "Class", "Percentage", 2:19)
+head(marriage1)
+```
+
+Make the Percentage as numeric:
+
+```{r}
+marriage2 <- suppressWarnings(marriage1 %>% 
+  mutate(Percentage = as.numeric(Percentage)))
+marriage2
+```
+
+Calculate Marriage rate using Mutate():
+
+```{r}
+marriage3 <- marriage2 %>% 
+  mutate(Marriage_Rate = 1 - Percentage)
+head(marriage3)
+```
+
+Using Rename() for Percentage field:
+
+```{r}
+marriage4 <- dplyr::rename(marriage3, Single_Rate = Percentage)
+head(marriage4)
+```
+
+Filter on Class
+```{r}
+marriage5 <- filter(marriage4, Class == "All")
+marriage5
+```
+
+Using ggplot to understand more:
+
+```{r}
+ggplot(marriage5, aes(x = Year, y=Marriage_Rate, fill = Class)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Year") + ylab("Marriage_Rate") 
+```
+
+```{r}
+ggplot(marriage5, aes(x = Year, y=Single_Rate, fill = Class)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Year") + ylab("Marriage_Rate") 
+```
+
+
+Marriage Rate by Year for each Class:
+
+```{r}
+marriage4$Marriage_Rate <- as.numeric(as.character(marriage4$Marriage_Rate))
+ggplot(marriage4, aes(x = Year, y = Marriage_Rate, group = Class, colour = Class)) +
+  geom_line() +
+  geom_point() +
+  theme_linedraw() +
+  ggtitle("Marriage Rates by Class for Ages 25-34") +
+  ylab("Marriage Rate") 
+  
+```
+
+We can see that the marriage rate is decling with the passing year.
+
+ 
