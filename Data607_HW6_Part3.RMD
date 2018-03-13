@@ -1,0 +1,117 @@
+---
+title: "Data607 HW6 Part3"
+author: "Ritesh Lohiya"
+date: "March 11, 2018"
+output: html_document
+---
+
+IS 607 - Project 2:
+
+The goal of this assignment is to give you practice in preparing different datasets for downstream analysis work.
+Your task is to:
+(1) Choose any three of the "wide" datasets identified in the Week 6 Discussion items. (You may use your own dataset; please don't use my Sample Post dataset, since that was used in your Week 6 assignment!) For each of the three chosen datasets:
+??? Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset. You're encouraged to use a "wide" structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below.
+??? Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data. [Most of your grade will be based on this step!]
+??? Perform the analysis requested in the discussion item.
+??? Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative descriptions of your data cleanup work, analysis, and conclusions.
+(2) Please include in your homework submission, for each of the three chosen datasets:
+??? The URL to the .Rmd file in your GitHub repository, and
+??? The URL for your rpubs.com web page.
+
+I have taken the data set about shipping and prepared my .csv file for my Part II Project.
+ 
+```{r}
+library(knitr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+shipping <- read.csv("https://raw.githubusercontent.com/Riteshlohiya/Data607-Week6/master/shipping_data.csv", header=TRUE, sep=",")
+shipping
+```
+
+Adding the date to all the rows:
+
+```{r}
+shipping[c(FALSE, TRUE),1] <- shipping[c(TRUE, FALSE), 1]
+head(shipping)
+```
+
+We can see that the data is in wide format. Need to bring the data to long format using gather():
+ 
+
+```{r}
+shipping1 <- gather(shipping, "Country", "Amount", 3:10)
+head(shipping1)
+``` 
+
+There are N/A in the data, we can remove thoes:
+
+```{r}
+shipping2 <- filter(shipping1, !is.na(Amount))
+head(shipping2)
+``` 
+
+Speard the data using spread():
+
+```{r}
+shipping3 <- shipping2 %>% 
+  spread(Values, Amount)
+head(shipping3)
+```
+
+Changing the column names:
+
+```{r}
+colnames(shipping3) <- c("Date", "Country", "Price_of_Carrier", "Shipping_Fees_Collected")
+head(shipping3)
+```
+
+Converting the Price_of_Carrier and Shipping_Fees_Collected fields to numeric:
+
+```{r}
+shipping3$Price_of_Carrier <- as.numeric(shipping3$Price_of_Carrier)
+shipping3$Shipping_Fees_Collected <- as.numeric(shipping3$Shipping_Fees_Collected)
+head(shipping3)
+```
+
+Removing NA:
+
+```{r}
+shipping4 <- shipping3 %>% filter(!is.na(Price_of_Carrier), !is.na(Shipping_Fees_Collected))
+head(shipping4)
+```
+
+Now we can aggregate the data for each country:
+
+```{r}
+shipping5 <- shipping4 %>% 
+  group_by(Country) %>% 
+  summarise(Price_of_Carrier = sum(Price_of_Carrier), Shipping_Fees_Collected = sum(Shipping_Fees_Collected))  
+shipping5  
+```
+
+Using ggplot to understand more:
+
+```{r}
+ggplot(shipping5, aes(x = Country, y=Price_of_Carrier, fill = Country)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Country") + ylab("Price_of_Carrier") +
+          ggtitle("Country v/s Price_of_Carrier")
+```
+
+```{r}
+ggplot(shipping5, aes(x = Country, y=Shipping_Fees_Collected, fill = Country)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Country") + ylab("Shipping_Fees_Collected") +
+          ggtitle("Country v/s Shipping_Fees_Collected")
+```
+
+We can see that China has most Price_of_Carrier and Shipping_Fees_Collected amounts
+
+
+
+
